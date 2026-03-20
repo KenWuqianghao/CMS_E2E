@@ -8,13 +8,13 @@ Code and documentation live in [`super_resolution/`](super_resolution/README.md)
 
 ## Agentic AI / HEPTAPOD (2c)
 
-Task **2c** work uses **HEPTAPOD**. This GitHub repo does **not** include the `heptapod/` tree (it is a large nested clone with its own history). Clone it next to this project:
+Task **2c** work lives in a **fork** of upstream HEPTAPOD (this repo does not vendor `heptapod/`). Clone the fork next to this project:
 
 ```bash
-git clone -b gsoc26-cms-restructure https://github.com/tonymenzo/heptapod.git heptapod
+git clone -b gsoc26-cms-restructure https://github.com/KenWuqianghao/heptapod.git heptapod
 ```
 
-Then read `heptapod/ARCHITECTURE_CMS_AGENT.md` and `heptapod/cms_agent/`. **Do not open a pull request** to the main HEPTAPOD repository for the evaluation—keep changes in your local clone or fork.
+Upstream for comparison: [`tonymenzo/heptapod`](https://github.com/tonymenzo/heptapod). Read `heptapod/ARCHITECTURE_CMS_AGENT.md` and `heptapod/cms_agent/`. For the evaluation, keep work on **your fork**; **do not open a pull request** to the upstream HEPTAPOD repo unless the program asks you to.
 
 ## Large data files
 
