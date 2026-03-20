@@ -1,0 +1,8 @@
+checkpoint: super_resolution/runs/quick/checkpoint_best.pt
+n_test: 200
+psnr_mean: 44.161094636724656
+psnr_std: 2.1967967812158244
+ssim_mean: 0.9930351380439736
+ssim_std: 0.0053683281458938
+energy_ratio_mean: 1.421386318178673
+radial_profile_l1_mean: 0.003978025633841753

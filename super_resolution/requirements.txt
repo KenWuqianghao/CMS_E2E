@@ -1,0 +1,8 @@
+torch>=2.0
+torchvision>=0.15
+pyarrow>=14.0
+pandas>=2.0
+numpy>=1.24
+scikit-image>=0.22
+tqdm>=4.65
+matplotlib>=3.8

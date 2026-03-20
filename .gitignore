@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.DS_Store
+*.pid
+
+# ML data (large; obtain from ML4SCI / task instructions)
+*.parquet
+
+# Local training logs
+*.log
+super_resolution/runs/*/train_log.txt
+super_resolution/train_log.txt
+
+# Personal Cursor / MCP handoff copies (may contain secrets)
+cursor_setup_handoff/
+cursor_setup_handoff_with_keys/
+
+# Nested HEPTAPOD clone (own remote); clone separately for task 2c
+heptapod/
