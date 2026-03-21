@@ -1,0 +1,134 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\setlist{nosep}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={GSoC 2026 CMS E2E Tasks 2b and 2c},
+  pdfauthor={CMS\_E2E submission}
+}
+
+\title{ML4SCI GSoC 2026 --- CMS E2E Evaluation Tasks\\\large Task 2b (Super-Resolution) and Task 2c (Agentic HEPTAPOD)}
+\author{Documented in repository \texttt{CMS\_E2E}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section*{Scope}
+This report summarizes work for two \textbf{independent} ML4SCI umbrella evaluation tracks: \textbf{Task~2b} (generative super-resolution on CMS-style jet images) and \textbf{Task~2c} (proposed HEPTAPOD layout and tooling for agentic CMS analyses). Each section is self-contained.
+
+% ---------------------------------------------------------------------------
+\section{Task 2b --- Super-resolution at the CMS detector}
+\label{sec:2b}
+
+\subsection{Objective}
+Train a \textbf{Generative Adversarial Network} to map low-resolution calorimeter jet images to high-resolution targets, using the official ML4SCI parquet release (CERNBox link in the GSoC PDF). The submission also documents modeling and optimization choices as required by the task statement.
+
+\subsection{Dataset and labels}
+\begin{itemize}
+  \item \textbf{Low resolution:} \texttt{X\_jets\_LR}, shape $3 \times 64 \times 64$.
+  \item \textbf{High resolution:} \texttt{X\_jets}, shape $3 \times 125 \times 125$.
+  \item \textbf{Class label:} \texttt{y} $\in \{0,1\}$ (quark vs.\ gluon), stratified in train/validation/test splits (default $80\%/10\%/10\%$).
+\end{itemize}
+The public shards use a \textbf{single Parquet row group per file}; the loader therefore \textbf{streams record batches} and materializes only the row indices needed for training, avoiding full-file loads per sample.
+
+\subsection{Model}
+\begin{itemize}
+  \item \textbf{Generator (SRGAN-style):} bicubic upsampling of LR to $125\times 125$ as an explicit baseline, plus a residual CNN (residual blocks, InstanceNorm) predicting a correction added to that baseline.
+  \item \textbf{Discriminator (PatchGAN):} convolutional stack with optional \textbf{class conditioning} via embedding-modulated feature maps (quark/gluon).
+  \item \textbf{Losses:} least-squares GAN objectives; \textbf{L1} reconstruction on normalized HR; small weight on \textbf{adversarial} loss; optional \textbf{energy-matching} term on denormalized total deposited energy ($\sum \max(0,x)$ over channels and pixels).
+\end{itemize}
+
+\subsection{Training and protocols}
+Two tiers are supported in code and documentation:
+\begin{enumerate}
+  \item \textbf{Host-constrained (reference):} materialized subsets via \texttt{--max-train-samples} / \texttt{--max-val-samples}, fewer epochs, optional \texttt{--memmap-train} when RAM is insufficient for full tensors.
+  \item \textbf{Full-scale:} no subset caps, \texttt{--epochs 20}, \texttt{--memmap-train} as needed for $\sim$full training index sets.
+\end{enumerate}
+Validation logs \texttt{val\_l1}, bicubic baseline \texttt{val\_bicubic\_l1}, and \texttt{val\_energy\_mae} to \texttt{history.csv}. Checkpoints: \texttt{checkpoint\_best.pt} (best val L1), \texttt{checkpoint\_last.pt}.
+
+\subsection{Evaluation}
+Script \texttt{super\_resolution/evaluate.py} reports JSON metrics on the test split (full test by default), including SR vs.\ HR and a \textbf{bicubic} baseline: PSNR/SSIM, mean total-energy ratio, energy MAE, mean radial-profile L1, and a toy linear probe on per-image channel means. Results are written as structured JSON (e.g.\ \texttt{metrics\_report.json}).
+
+\subsection{Reference results (checked in)}
+Using the \textbf{full\_run} configuration (subset caps, 8 epochs, $\lambda_{\mathrm{energy}}=0.05$) on the full test split ($n=13\,932$), illustrative numbers from \texttt{super\_resolution/runs/full\_run/metrics\_report.json}:
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Metric & SR & Bicubic \\
+\midrule
+PSNR mean (dB) & 44.28 & 44.28 \\
+SSIM mean & 0.9935 & 0.9934 \\
+Energy MAE vs.\ HR & 1.20 & 21.29 \\
+Mean radial profile L1 vs.\ HR & 0.00040 & 0.00132 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The energy penalty materially improves \textbf{energy fidelity} vs.\ bicubic; image PSNR/SSIM remain close to the trivial resize because the task geometry is dominated by a smooth upscale.
+
+An \textbf{ablation} with \texttt{--lambda-energy 0} (\texttt{ablation\_no\_energy/}) shows degraded energy scale (e.g.\ energy MAE $\approx 153$ vs.\ HR) despite similar PSNR, illustrating the need for physics-aware terms beyond pixel loss.
+
+\subsection{Code layout}
+\texttt{super\_resolution/data.py}, \texttt{models.py}, \texttt{train.py}, \texttt{evaluate.py}; narrative in \texttt{MODEL\_DISCUSSION.md} and \texttt{README.md}.
+
+% ---------------------------------------------------------------------------
+\section{Task 2c --- Agentic AI for HEP analyses (HEPTAPOD)}
+\label{sec:2c}
+
+\subsection{Objective}
+Per the evaluation brief: clone HEPTAPOD, work on a \textbf{separate branch} in your fork, propose an \textbf{alternative folder structure} and \textbf{tool set} informed by repositories linked on the project page, and \textbf{do not open a pull request} to the upstream HEPTAPOD repository unless the program explicitly requests it.
+
+\subsection{Fork and branch}
+Development branch: \texttt{gsoc26-cms-restructure}. Example clone:
+\begin{verbatim}
+git clone -b gsoc26-cms-restructure \
+  https://github.com/KenWuqianghao/heptapod.git heptapod
+\end{verbatim}
+Upstream reference: \url{https://github.com/tonymenzo/heptapod}.
+
+\subsection{Proposed layout (\texttt{cms\_agent/})}
+A parallel tree separates CMS-oriented orchestration from the existing generic \texttt{tools/}, \texttt{llm/}, and \texttt{examples/} directories:
+\begin{itemize}
+  \item \texttt{cms\_agent/agents/} --- planner contract and role boundaries.
+  \item \texttt{cms\_agent/workflows/} --- example run cards and (where applicable) JSON schema for validated planner output.
+  \item \texttt{cms\_agent/tools/adapters/} --- thin adapters toward CMSSW, \texttt{coffea}, \texttt{awkward}, etc., preserving HEPTAPOD-friendly JSON outputs.
+  \item \texttt{cms\_agent/configs/} --- model routing and tool allowlists (e.g.\ forbid arbitrary shell).
+  \item \texttt{cms\_agent/knowledge/} --- curated snippets / RAG manifest placeholders.
+  \item \texttt{cms\_agent/eval/} --- golden prompts and small fixtures (e.g.\ histogram contract checks).
+\end{itemize}
+Architecture narrative: \texttt{heptapod/ARCHITECTURE\_CMS\_AGENT.md}.
+
+\subsection{Tool inventory}
+\texttt{cms\_agent/TOOL\_INVENTORY.md} maps each conceptual tool to dependencies cited in HEPTAPOD documentation (Orchestral AI runtime, MCP bridges, PDG/INSPIRE tools in-repo, CMSSW/coffea-class stacks for CMS-specific steps) and records failure modes.
+
+\subsection{Minimal working adapter}
+\texttt{cms\_agent/tools/adapters/cms\_histograms.py} implements a \textbf{NumPy-only} leading-\(p_T\) histogram JSON contract so the scaffold can be exercised without CMSSW or \texttt{coffea} installed.
+
+\subsection{Compliance}
+Work remains on the contributor fork branch; no merge to upstream was required for the evaluation checklist.
+
+% ---------------------------------------------------------------------------
+\section*{Repository map}
+\begin{description}[style=unboxed,leftmargin=0cm]
+  \item[Task 2b:] \texttt{super\_resolution/}, run artifacts under \texttt{super\_resolution/runs/}.
+  \item[Task 2c:] HEPTAPOD fork (clone separately; see \texttt{README.md} in this repo).
+  \item[This PDF:] \texttt{docs/GSoC26\_CMS\_E2E\_Report.pdf} (build from \texttt{docs/GSoC26\_CMS\_E2E\_Report.tex}).
+\end{description}
+
+\end{document}
