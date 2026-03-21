@@ -1,16 +1,16 @@
-# Documentation
+# Documentation (Task 2b only)
 
-## PDF report (Tasks 2b + 2c)
+## PDF report
 
-- **Built PDF:** [GSoC26_CMS_E2E_Report.pdf](GSoC26_CMS_E2E_Report.pdf)
-- **LaTeX source:** [GSoC26_CMS_E2E_Report.tex](GSoC26_CMS_E2E_Report.tex)
+- **Built PDF:** [GSoC26_Task2b_Report.pdf](GSoC26_Task2b_Report.pdf)
+- **LaTeX source:** [GSoC26_Task2b_Report.tex](GSoC26_Task2b_Report.tex)
 
-Rebuild (requires a LaTeX distribution with `pdflatex`):
+Rebuild (requires `pdflatex`):
 
 ```bash
 cd docs
-pdflatex -interaction=nonstopmode GSoC26_CMS_E2E_Report.tex
-pdflatex -interaction=nonstopmode GSoC26_CMS_E2E_Report.tex
+pdflatex -interaction=nonstopmode GSoC26_Task2b_Report.tex
+pdflatex -interaction=nonstopmode GSoC26_Task2b_Report.tex
 ```
 
-Intermediate files (`*.aux`, `*.log`, `*.out`, `*.toc`) are ignored by git when listed in the repo root `.gitignore`.
+Intermediate LaTeX build files under `docs/` are gitignored via `docs/.gitignore`.
